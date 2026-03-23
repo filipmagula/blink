@@ -66,6 +66,11 @@ func main() {
     } else {
         // Serve embedded Vue admin app at /admin/
         mux.Handle("GET /admin/", http.StripPrefix("/admin/", http.FileServer(http.FS(dist))))
+        
+        // Redirect /admin to /admin/ for better UX
+        mux.HandleFunc("GET /admin", func(w http.ResponseWriter, r *http.Request) {
+            http.Redirect(w, r, "/admin/", http.StatusMovedPermanently)
+        })
     }
 
     // Explicit 404 for root GET to prevent indexing leaking files
@@ -75,7 +80,7 @@ func main() {
 
     port := os.Getenv("PORT")
     if port == "" {
-        port = "8080"
+        port = "21337"
     }
     
     log.Printf("Blink server running on :%s", port)

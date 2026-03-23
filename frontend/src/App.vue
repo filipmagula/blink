@@ -54,11 +54,20 @@
           <form @submit.prevent="saveSettings">
             <div style="margin-bottom: 1.25rem;">
               <label>Default Max Downloads</label>
-              <input type="number" v-model.number="settings.max_downloads" min="1" max="100" />
+              <input type="number" v-model.number="settings.max_downloads" min="1" />
             </div>
             <div style="margin-bottom: 1.5rem;">
               <label>Default Expiry (minutes)</label>
-              <input type="number" v-model.number="settings.default_expiry_m" min="1" max="1440" />
+              <input type="number" v-model.number="settings.default_expiry_m" min="1" />
+            </div>
+            <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; font-size: 1rem;">Maximum Allowed Limits</h3>
+            <div style="margin-bottom: 1.25rem;">
+              <label>Maximum Allowed Downloads</label>
+              <input type="number" v-model.number="settings.max_allowed_downloads" min="1" />
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+              <label>Maximum Allowed Expiry (minutes)</label>
+              <input type="number" v-model.number="settings.max_allowed_expiry_m" min="1" />
             </div>
             <div style="display: flex; align-items: center; gap: 1rem;">
               <button type="submit" class="btn">Update Limits</button>
@@ -114,7 +123,7 @@ const password = ref('')
 const error = ref('')
 
 const stats = ref({ total_files: 0, storage_used: 0, bandwidth_consumed: 0 })
-const settings = ref({ max_downloads: 1, default_expiry_m: 10 })
+const settings = ref({ max_downloads: 1, default_expiry_m: 10, max_allowed_downloads: 100, max_allowed_expiry_m: 1440 })
 const settingsSaved = ref(false)
 const files = ref([])
 

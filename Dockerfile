@@ -44,7 +44,7 @@ COPY --from=backend-builder /app/blink /app/blink
 # Ensure data and upload directories exist
 RUN mkdir -p /app/data/uploads && chmod 777 -R /app/data
 
-EXPOSE 8080
-ENV PORT=8080
+EXPOSE 21337
+ENV PORT=21337
 
 CMD ["/app/blink"]

@@ -25,21 +25,29 @@ func HandleUpload(db *store.DB) http.HandlerFunc {
 
         settings, _ := db.GetSettings()
         if settings.MaxDownloads == 0 { settings.MaxDownloads = 1; settings.DefaultExpiryM = 60 }
+        if settings.MaxAllowedDownloads == 0 { settings.MaxAllowedDownloads = 100 }
+        if settings.MaxAllowedExpiryM == 0 { settings.MaxAllowedExpiryM = 1440 }
 
         maxDownloads := settings.MaxDownloads
         if hdl := r.Header.Get("Max-Downloads"); hdl != "" {
-            if val, err := strconv.Atoi(hdl); err == nil && val > 0 && val <= 100 {
+            if val, err := strconv.Atoi(hdl); err == nil && val > 0 {
                 maxDownloads = val
             }
+        }
+        if maxDownloads > settings.MaxAllowedDownloads {
+            maxDownloads = settings.MaxAllowedDownloads
         }
 
         expiryMinutes := settings.DefaultExpiryM
         if expStr := r.Header.Get("Expiry"); expStr != "" {
             if duration, err := time.ParseDuration(expStr); err == nil {
-                if m := int(duration.Minutes()); m > 0 && m <= 1440 {
+                if m := int(duration.Minutes()); m > 0 {
                     expiryMinutes = m
                 }
             }
+        }
+        if expiryMinutes > settings.MaxAllowedExpiryM {
+            expiryMinutes = settings.MaxAllowedExpiryM
         }
 
         filename := r.PathValue("filename")
@@ -81,7 +89,12 @@ func HandleUpload(db *store.DB) http.HandlerFunc {
         scheme := "http"
         if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" { scheme = "https" }
         w.Header().Set("Content-Type", "text/plain")
-        w.Write([]byte(scheme + "://" + r.Host + "/" + id + "\n"))
+
+        responseMsg := scheme + "://" + r.Host + "/" + id + "\n"
+        responseMsg += "Downloads allowed: " + strconv.Itoa(maxDownloads) + "\n"
+        responseMsg += "Expires in: " + strconv.Itoa(expiryMinutes) + " minutes\n"
+        
+        w.Write([]byte(responseMsg))
     }
 }
 

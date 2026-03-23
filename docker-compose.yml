@@ -5,10 +5,10 @@ services:
     build: .
     container_name: blink_server
     ports:
-      - "8080:8080"
+      - "21337:21337"
     environment:
-      - ADMIN_PASSWORD=supersecretadmin
-      - JWT_SECRET=change-me-in-production
+      - ADMIN_PASSWORD
+      - JWT_SECRET
     volumes:
       - blink_data:/app/data
     restart: unless-stopped

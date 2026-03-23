@@ -18,8 +18,10 @@ type FileMeta struct {
 }
 
 type Settings struct {
-    MaxDownloads   int `json:"max_downloads"`
-    DefaultExpiryM int `json:"default_expiry_m"`
+    MaxDownloads        int `json:"max_downloads"`
+    DefaultExpiryM      int `json:"default_expiry_m"`
+    MaxAllowedDownloads int `json:"max_allowed_downloads"`
+    MaxAllowedExpiryM   int `json:"max_allowed_expiry_m"`
 }
 
 type DB struct {
@@ -51,17 +53,32 @@ func InitDB(path string) (*DB, error) {
     if err != nil {
         return nil, err
     }
+
+    // Auto-migrate v1 -> v2 settings
+    // If the columns already exist, this will return an error which we safely ignore
+    db.Exec("ALTER TABLE settings ADD COLUMN max_allowed_downloads INTEGER DEFAULT 100")
+    db.Exec("ALTER TABLE settings ADD COLUMN max_allowed_expiry_m INTEGER DEFAULT 1440")
+    
+    // Ensure no null values if row existed before alter
+    db.Exec("UPDATE settings SET max_allowed_downloads = 100 WHERE max_allowed_downloads IS NULL")
+    db.Exec("UPDATE settings SET max_allowed_expiry_m = 1440 WHERE max_allowed_expiry_m IS NULL")
     return &DB{db}, nil
+}
+
+func (d *DB) Close() error {
+    return d.db.Close()
 }
 
 func (d *DB) GetSettings() (Settings, error) {
     var s Settings
-    err := d.db.QueryRow("SELECT max_downloads, default_expiry_m FROM settings WHERE id = 1").Scan(&s.MaxDownloads, &s.DefaultExpiryM)
+    err := d.db.QueryRow("SELECT max_downloads, default_expiry_m, max_allowed_downloads, max_allowed_expiry_m FROM settings WHERE id = 1").
+        Scan(&s.MaxDownloads, &s.DefaultExpiryM, &s.MaxAllowedDownloads, &s.MaxAllowedExpiryM)
     return s, err
 }
 
 func (d *DB) UpdateSettings(s Settings) error {
-    _, err := d.db.Exec("UPDATE settings SET max_downloads = ?, default_expiry_m = ? WHERE id = 1", s.MaxDownloads, s.DefaultExpiryM)
+    _, err := d.db.Exec("UPDATE settings SET max_downloads = ?, default_expiry_m = ?, max_allowed_downloads = ?, max_allowed_expiry_m = ? WHERE id = 1",
+        s.MaxDownloads, s.DefaultExpiryM, s.MaxAllowedDownloads, s.MaxAllowedExpiryM)
     return err
 }
 
