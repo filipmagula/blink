@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  blink:
+    build: .
+    container_name: blink_server
+    ports:
+      - "8080:8080"
+    environment:
+      - ADMIN_PASSWORD=supersecretadmin
+      - JWT_SECRET=change-me-in-production
+    volumes:
+      - blink_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  blink_data:
