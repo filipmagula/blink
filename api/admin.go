@@ -104,6 +104,10 @@ func HandleUpdateSettings(db *store.DB) http.HandlerFunc {
             http.Error(w, "Bad request", http.StatusBadRequest)
             return
         }
+        if s.MaxDownloads < 1 || s.DefaultExpiryM < 1 || s.MaxAllowedDownloads < 1 || s.MaxAllowedExpiryM < 1 || s.MaxAllowedFileSizeMB < 1 {
+            http.Error(w, "All limits must be greater than 0", http.StatusBadRequest)
+            return
+        }
         if err := db.UpdateSettings(s); err != nil {
             http.Error(w, "Update failed", http.StatusInternalServerError)
             return
@@ -135,6 +139,33 @@ func HandleDeleteFile(db *store.DB) http.HandlerFunc {
         db.DeleteFile(id)
         // Shred payload
         os.Remove("data/uploads/" + id)
+        w.WriteHeader(http.StatusOK)
+    }
+}
+
+func HandleUpdateFile(db *store.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        id := r.PathValue("id")
+        if id == "" {
+            http.Error(w, "Missing ID", http.StatusBadRequest)
+            return
+        }
+        var req struct {
+            DownloadsLeft int `json:"downloads_left"`
+            ExpiryMinutes int `json:"expiry_minutes"`
+        }
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+            http.Error(w, "Bad request", http.StatusBadRequest)
+            return
+        }
+        if req.DownloadsLeft <= 0 || req.ExpiryMinutes <= 0 {
+            http.Error(w, "Values must be greater than 0", http.StatusBadRequest)
+            return
+        }
+        if err := db.UpdateFileLimits(id, req.DownloadsLeft, req.ExpiryMinutes); err != nil {
+            http.Error(w, "Update failed or file not allowed", http.StatusForbidden)
+            return
+        }
         w.WriteHeader(http.StatusOK)
     }
 }

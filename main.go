@@ -57,6 +57,9 @@ func main() {
     mux.Handle("PUT /admin/api/settings", api.AuthMiddleware(appToken, api.HandleUpdateSettings(db)))
     mux.Handle("GET /admin/api/files", api.AuthMiddleware(appToken, api.HandleListFiles(db)))
     mux.Handle("DELETE /admin/api/files/{id}", api.AuthMiddleware(appToken, api.HandleDeleteFile(db)))
+    mux.Handle("PUT /admin/api/files/{id}", api.AuthMiddleware(appToken, api.HandleUpdateFile(db)))
+    mux.Handle("POST /admin/api/upload", api.AuthMiddleware(appToken, api.HandleAdminUpload(db)))
+    mux.Handle("POST /admin/api/upload/{filename}", api.AuthMiddleware(appToken, api.HandleAdminUpload(db)))
 
     // Sub direct embedded dist folder (stripped of frontend/dist)
     dist, err := fs.Sub(frontendDist, "frontend/dist")
